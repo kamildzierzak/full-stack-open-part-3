@@ -3,10 +3,14 @@ const morgan = require('morgan')
 
 const app = express()
 
-// Add the morgan middleware to your application for logging. Configure it to log messages to your console based on the tiny configuration.
+// "in practice, try not to log any sensitive data"
+morgan.token('data', (req, res) => JSON.stringify(req.body))
 
 app.use(express.json())
 app.use(morgan('tiny'))
+app.use(
+  morgan(':method :url :status :res[content-length] - :response-time ms :data')
+)
 
 let persons = [
   {
