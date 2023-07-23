@@ -4,4 +4,4 @@
 
 So let it be.
 
-Link to the app: https://full-stack-open-part-3--kamdzierzak.repl.co/api/persons
+Link to the app: https://full-stack-open-part-3--kamdzierzak.repl.co
