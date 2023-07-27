@@ -18,10 +18,13 @@ app.use(cors())
 app.use(express.static('build'))
 
 app.get('/info', (request, response) => {
-  const numberOfPeople = persons.length || 0 //TODO fix
-  const currentTime = new Date()
-  response.send(`<p>Phonebook has info for ${numberOfPeople} people</p>
-  <p>${currentTime}</p>`)
+  Person.countDocuments()
+    .then(numberOfPeople => {
+      const currentTime = new Date()
+      response.send(`<p>Phonebook has info for ${numberOfPeople} people</p>
+   <p>${currentTime}</p>`)
+    })
+    .catch(error => next(error))
 })
 
 app.get('/api/persons', (request, response) => {
