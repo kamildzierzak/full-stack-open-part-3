@@ -25,9 +25,11 @@ app.get('/info', (request, response) => {
 })
 
 app.get('/api/persons', (request, response) => {
-  Person.find({}).then(persons => {
-    response.json(persons)
-  })
+  Person.find({})
+    .then(persons => {
+      response.json(persons)
+    })
+    .catch(error => next(error))
 })
 
 app.get('/api/persons/:id', (request, response, next) => {
@@ -39,35 +41,62 @@ app.get('/api/persons/:id', (request, response, next) => {
     .catch(error => next(error))
 })
 
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', (request, response, next) => {
   const body = request.body
 
   if (!body.name) {
-    return response.status(400).json({
-      error: 'name is missing',
-    })
+    const error = new Error('Missing Name Error')
+    error.name = 'MissingNameError'
+    error.statusCode = 422
+    return next(error)
   }
 
   if (!body.phoneNumber) {
-    return response.status(400).json({
-      error: 'number is missing',
-    })
+    const error = new Error('Missing Number Error')
+    error.name = 'MissingNumberError'
+    error.statusCode = 422
+    return next(error)
   }
 
-  // if (persons.find(person => person.name === body.name)) {
-  //   return response.status(400).json({
-  //     error: 'name must be unique',
-  //   })
-  // }
+  Person.findOne({ name: body.name }).then(person => {
+    if (person) {
+      return response.redirect(303, `/api/persons/${person.id}`)
+    } else {
+      const person = new Person({
+        name: body.name,
+        number: body.phoneNumber,
+      })
 
-  const person = new Person({
+      person
+        .save()
+        .then(savedPerson => {
+          response.json(savedPerson)
+        })
+        .catch(error => next(error))
+    }
+  })
+})
+
+app.put('/api/persons/:id', (request, response, next) => {
+  const body = request.body
+
+  if (!body.phoneNumber) {
+    const error = new Error('Missing Number Error')
+    error.name = 'MissingNumberError'
+    error.statusCode = 422
+    return next(error)
+  }
+
+  const person = {
     name: body.name,
     number: body.phoneNumber,
-  })
+  }
 
-  person.save().then(savedPerson => {
-    response.json(savedPerson)
-  })
+  Person.findByIdAndUpdate(request.params.id, person, { new: true })
+    .then(updatedPerson => {
+      response.json(updatedPerson)
+    })
+    .catch(error => next(error))
 })
 
 app.delete('/api/persons/:id', (request, response) => {
@@ -78,17 +107,30 @@ app.delete('/api/persons/:id', (request, response) => {
     .catch(error => next(error))
 })
 
-const errorHandler = (error, request, respons, next) => {
+const errorHandler = (error, request, response, next) => {
   console.log(error.message)
 
+  let statusCode = 500
+  let errorMessage = 'Wow, something went wrong!'
+
   if (error.name === 'CastError') {
-    return respons.status(400).send({ error: 'malformatted id' })
+    statusCode = 400
+    errorMessage = 'malformatted id'
+  } else if (error.name === 'MissingNameError') {
+    statusCode = 422
+    errorMessage = 'Missing name'
+  } else if (error.name === 'MissingNumberError') {
+    statusCode = 422
+    errorMessage = 'Missing number'
   }
+
+  response.status(statusCode).send({ error: errorMessage })
 
   next(error)
 }
 
 app.use(errorHandler)
+
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
