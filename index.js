@@ -125,6 +125,9 @@ const errorHandler = (error, request, response, next) => {
   } else if (error.name === 'MissingNumberError') {
     statusCode = 422
     errorMessage = 'Missing number'
+  } else if (error.name === 'ValidationError') {
+    statusCode = 400
+    errorMessage = error.message
   }
 
   response.status(statusCode).send({ error: errorMessage })
