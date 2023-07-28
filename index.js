@@ -7,7 +7,7 @@ const Person = require('./models/person')
 const app = express()
 
 // "in practice, try not to log any sensitive data"
-morgan.token('data', (req, res) => JSON.stringify(req.body))
+morgan.token('data', req => JSON.stringify(req.body))
 
 app.use(express.json())
 app.use(morgan('tiny'))
@@ -17,7 +17,7 @@ app.use(
 app.use(cors())
 app.use(express.static('build'))
 
-app.get('/info', (request, response) => {
+app.get('/info', (request, response, next) => {
   Person.countDocuments()
     .then(numberOfPeople => {
       const currentTime = new Date()
@@ -27,7 +27,7 @@ app.get('/info', (request, response) => {
     .catch(error => next(error))
 })
 
-app.get('/api/persons', (request, response) => {
+app.get('/api/persons', (request, response, next) => {
   Person.find({})
     .then(persons => {
       response.json(persons)
@@ -105,9 +105,9 @@ app.put('/api/persons/:id', (request, response, next) => {
     .catch(error => next(error))
 })
 
-app.delete('/api/persons/:id', (request, response) => {
+app.delete('/api/persons/:id', (request, response, next) => {
   Person.findByIdAndRemove(request.params.id)
-    .then(result => {
+    .then(() => {
       response.status(204).end()
     })
     .catch(error => next(error))
